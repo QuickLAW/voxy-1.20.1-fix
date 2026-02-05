@@ -35,6 +35,7 @@ void main() {
     }
 
     vec3 point = rev3d(vec3(UV.xy, depth));
+    float dist = length(point.xyz);
     depth = projDepth(point);
     depth = min(1.0f-(2.0f/((1<<24)-1)), depth);
     depth = depth * 0.5f + 0.5f;
@@ -48,14 +49,13 @@ void main() {
     }
     #ifdef USE_ENV_FOG
     {
-        float fogLerp = clamp(fma(min(length(point.xyz), endParams.x),endParams.y,endParams.z),0,1);//512 is 32*16 which is the render distance in blocks
+        float fogLerp = clamp(fma(min(dist, endParams.x),endParams.y,endParams.z),0,1);//512 is 32*16 which is the render distance in blocks
         colour.rgb = mix(colour.rgb, fogColour, fogLerp);
     }
     #endif
 
     #ifdef USE_ATMOSPHERIC_FOG
     {
-        float dist = length(point.xyz);
         float density = atmosphericFogParams.x;
         float falloff = atmosphericFogParams.y;
         float start = atmosphericFogParams.z;
