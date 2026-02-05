@@ -95,9 +95,11 @@ public class Serialization {
         Map<Class<?>, GsonConfigSerialization<?>> serializers = new HashMap<>();
 
         Set<String> clazzs = new LinkedHashSet<>();
-        var path = FabricLoader.getInstance().getModContainer("voxy").get().getRootPaths().get(0);
-        clazzs.addAll(collectAllClasses(path, BASE_SEARCH_PACKAGE));
-        clazzs.addAll(collectAllClasses(BASE_SEARCH_PACKAGE));
+        FabricLoader.getInstance().getModContainer("voxy").ifPresent(mod -> {
+            for (Path rootPath : mod.getRootPaths()) {
+                clazzs.addAll(collectAllClasses(rootPath, BASE_SEARCH_PACKAGE));
+            }
+        });
         int count = 0;
         outer:
         for (var clzName : clazzs) {
@@ -162,25 +164,6 @@ public class Serialization {
         Logger.info("Registered " + count + " config types");
     }
 
-    private static List<String> collectAllClasses(String pack) {
-        try {
-            InputStream stream = Serialization.class.getClassLoader()
-                    .getResourceAsStream(pack.replaceAll("[.]", "/"));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-            return reader.lines().flatMap(inner -> {
-                if (inner.endsWith(".class")) {
-                    return Stream.of(pack + "." + inner.replace(".class", ""));
-                } else if (!inner.contains(".")) {
-                    return collectAllClasses(pack + "." + inner).stream();
-                } else {
-                    return Stream.of();
-                }
-            }).collect(Collectors.toList());
-        } catch (Exception e) {
-            Logger.error("Failed to collect classes in package: " + pack, e);
-            return List.of();
-        }
-    }
     private static List<String> collectAllClasses(Path base, String pack) {
         if (!Files.exists(base.resolve(pack.replaceAll("[.]", "/")))) {
             return List.of();
