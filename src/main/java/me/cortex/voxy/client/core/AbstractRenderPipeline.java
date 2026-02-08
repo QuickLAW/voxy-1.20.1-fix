@@ -114,39 +114,11 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
 
         glColorMask(false,false,false,false);
         this.depthCopy.blit();
-
-        /*
-        if (Capabilities.INSTANCE.isMesa){
-            glClearStencil(1);
-            glClear(GL_STENCIL_BUFFER_BIT);
-        }*/
-
-        //This whole thing is hell, we basicly want to create a mask stenicel/depth mask specificiclly
-        // in theory we could do this in a single pass by passing in the depth buffer from the sourceFrambuffer
-        // but the current implmentation does a 2 pass system
-        glEnable(GL_STENCIL_TEST);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glStencilFunc(GL_ALWAYS, 0, 0xFF);
-        glStencilMask(0xFF);
-
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_NOTEQUAL);//If != 1 pass
-        //We do here
-        this.depthMaskBlit.blit();
-        glDisable(GL_DEPTH_TEST);
-
-        //Blit depth 0 where stencil is 0
-        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-        glStencilFunc(GL_EQUAL, 0, 0xFF);
-
-        this.depthSetBlit.blit();
-
-        glDepthFunc(GL_LEQUAL);
         glColorMask(true,true,true,true);
 
-        //Make voxy terrain render only where there isnt mc terrain
-        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glDisable(GL_STENCIL_TEST);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
     }
 
     private static final long SCRATCH = MemoryUtil.nmemAlloc(4*4*4);

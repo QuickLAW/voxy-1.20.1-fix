@@ -31,10 +31,12 @@ public class MixinSodiumWorldRenderer {
     private ChunkRenderMatrices voxy$capturedMatrices;
 
     @Inject(
-        method = "drawChunkLayer(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/PoseStack;DDD)V",
-        at = @At("HEAD")
+        method = "drawChunkLayer(Lnet/minecraft/class_1921;Lnet/minecraft/class_4587;DDD)V",
+        at = @At("HEAD"),
+        remap = false,
+        require = 0
     )
-    private void voxy$captureMatrices(
+    private void voxy$captureMatrices$poseStack(
             RenderType renderLayer,
             PoseStack matrixStack,
             double x,
@@ -45,8 +47,33 @@ public class MixinSodiumWorldRenderer {
         this.voxy$capturedMatrices = ChunkRenderMatrices.from(matrixStack);
     }
 
-    @Inject(method = "drawChunkLayer(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/PoseStack;DDD)V", at = @At("TAIL"))
-    private void injectRender(RenderType renderLayer, PoseStack matrixStack, double x, double y, double z, CallbackInfo ci) {
+    @Inject(
+        method = "drawChunkLayer(Lnet/minecraft/class_1921;Lnet/minecraft/class_4587;DDD)V",
+        at = @At("TAIL"),
+        remap = false,
+        require = 0
+    )
+    private void voxy$injectRender$poseStack(RenderType renderLayer, PoseStack matrixStack, double x, double y, double z, CallbackInfo ci) {
+        this.doRender(this.voxy$capturedMatrices, renderLayer, x, y, z);
+    }
+
+    @Inject(
+        method = "drawChunkLayer(Lnet/minecraft/class_1921;Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderMatrices;DDD)V",
+        at = @At("HEAD"),
+        remap = false,
+        require = 0
+    )
+    private void voxy$captureMatrices$chunkMatrices(RenderType renderLayer, ChunkRenderMatrices matrices, double x, double y, double z, CallbackInfo ci) {
+        this.voxy$capturedMatrices = matrices;
+    }
+
+    @Inject(
+        method = "drawChunkLayer(Lnet/minecraft/class_1921;Lme/jellysquid/mods/sodium/client/render/chunk/ChunkRenderMatrices;DDD)V",
+        at = @At("TAIL"),
+        remap = false,
+        require = 0
+    )
+    private void voxy$injectRender$chunkMatrices(RenderType renderLayer, ChunkRenderMatrices matrices, double x, double y, double z, CallbackInfo ci) {
         this.doRender(this.voxy$capturedMatrices, renderLayer, x, y, z);
     }
     

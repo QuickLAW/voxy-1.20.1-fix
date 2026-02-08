@@ -34,6 +34,7 @@ import static org.lwjgl.opengl.GL20C.nglUniform4fv;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL43.GL_DEPTH_STENCIL_TEXTURE_MODE;
 import static org.lwjgl.opengl.GL45C.glBindTextureUnit;
+import static org.lwjgl.opengl.GL45C.glGetNamedFramebufferAttachmentParameteri;
 import static org.lwjgl.opengl.GL45C.glTextureParameterf;
 
 public class NormalRenderPipeline extends AbstractRenderPipeline {
@@ -108,6 +109,18 @@ public class NormalRenderPipeline extends AbstractRenderPipeline {
     protected void finish(Viewport<?> viewport, int sourceFrameBuffer, int srcWidth, int srcHeight) {
         this.finalBlit.bind();
 
+        try (var stack = MemoryStack.stackPush()) {
+            long ptr = stack.nmalloc(4*4*4);
+            viewport.projection.invert(new Matrix4f()).getToAddress(ptr);
+            nglUniformMatrix4fv(1, 1, false, ptr);//Voxy Inv Proj
+
+            viewport.vanillaProjection.getToAddress(ptr);
+            nglUniformMatrix4fv(2, 1, false, ptr);//Vanilla Proj
+
+            viewport.vanillaProjection.invert(new Matrix4f()).getToAddress(ptr);
+            nglUniformMatrix4fv(3, 1, false, ptr);//Vanilla Inv Proj
+        }
+
         if (VoxyConfig.CONFIG.atmosphericFog) {
             try (var stack = MemoryStack.stackPush()) {
                 // density, falloff, start, unused
@@ -121,14 +134,20 @@ public class NormalRenderPipeline extends AbstractRenderPipeline {
         }
 
         glBindTextureUnit(3, this.colourSSAOTex.id);
+        int vanillaDepth = glGetNamedFramebufferAttachmentParameteri(sourceFrameBuffer, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+        glBindTextureUnit(4, vanillaDepth);
 
         //Do alpha blending
+        glDisable(GL_STENCIL_TEST);
+        glBindFramebuffer(GL_FRAMEBUFFER, sourceFrameBuffer);
+        glBindTextureUnit(0, this.fb.getDepthTex().id);
 
         glEnable(GL_BLEND);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        AbstractRenderPipeline.transformBlitDepth(this.finalBlit, this.fb.getDepthTex().id, sourceFrameBuffer, viewport, new Matrix4f(viewport.vanillaProjection).mul(viewport.modelView));
+        glEnable(GL_DEPTH_TEST);
+        this.finalBlit.blit();
         glDisable(GL_BLEND);
-        //glBlitNamedFramebuffer(this.fbSSAO.id, sourceFrameBuffer, 0,0, viewport.width, viewport.height, 0,0, viewport.width, viewport.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glDisable(GL_DEPTH_TEST);
     }
 
     @Override

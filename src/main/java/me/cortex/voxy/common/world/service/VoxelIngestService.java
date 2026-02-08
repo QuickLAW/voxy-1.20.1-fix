@@ -48,27 +48,40 @@ public class VoxelIngestService {
     }
 
     private void processJob() {
-        var task = this.ingestQueue.pop();
-        task.world.markActive();
+        int processed = 0;
+        while (processed < 16) {
+            var task = this.ingestQueue.pollFirst();
+            if (task == null) break;
+            processed++;
+            
+            task.world.markActive();
 
-        var vs = SECTION_CACHE.get().setPosition(task.cx, task.cy, task.cz);
+            var vs = SECTION_CACHE.get().setPosition(task.cx, task.cy, task.cz);
 
-        if (task.onlyAir && task.blockLight == null && task.skyLight == null) {
-            WorldUpdater.insertUpdate(task.world, vs.zero());
-        } else {
-            VoxelizedSection csec = WorldConversionFactory.convert(
-                    SECTION_CACHE.get(),
-                    task.world.getMapper(),
-                    task.states,
-                    task.biomes,
-                    task.blockLight,
-                    task.skyLight
-            );
-            WorldConversionFactory.mipSection(csec, task.world.getMapper());
-            WorldUpdater.insertUpdate(task.world, csec);
+            if (task.onlyAir && task.blockLight == null && task.skyLight == null) {
+                WorldUpdater.insertUpdate(task.world, vs.zero());
+            } else {
+                VoxelizedSection csec = WorldConversionFactory.convert(
+                        SECTION_CACHE.get(),
+                        task.world.getMapper(),
+                        task.states,
+                        task.biomes,
+                        task.blockLight,
+                        task.skyLight
+                );
+                WorldConversionFactory.mipSection(csec, task.world.getMapper());
+                WorldUpdater.insertUpdate(task.world, csec);
+            }
+            releaseLightData(task.blockLight);
+            releaseLightData(task.skyLight);
         }
-        releaseLightData(task.blockLight);
-        releaseLightData(task.skyLight);
+        if (!this.ingestQueue.isEmpty()) {
+            try {
+                this.service.execute();
+            } catch (Exception e) {
+                Logger.error("Error re-scheduling ingest job", e);
+            }
+        }
     }
 
     private static IngestSection snapshotSection(int cx, int cy, int cz, WorldEngine world, LevelChunkSection section, byte[] blockLight, byte[] skyLight) {
@@ -108,8 +121,6 @@ public class VoxelIngestService {
             allEmpty&=section.hasOnlyAir();
             //if (section.isEmpty()) continue;
             var pos = SectionPos.of(chunk.getPos(), i);
-            if (lightingProvider.getDebugSectionType(LightLayer.SKY, pos) != LayerLightSectionStorage.SectionType.LIGHT_AND_DATA && lightingProvider.getDebugSectionType(LightLayer.BLOCK, pos) != LayerLightSectionStorage.SectionType.LIGHT_AND_DATA)
-                continue;
             gotLighting = true;
         }
 
@@ -132,9 +143,11 @@ public class VoxelIngestService {
         }
     }
 
+        /*
         if (!gotLighting) {
             return false;
         }
+         */
 
         var blp = lightingProvider.getLayerListener(LightLayer.BLOCK);
         var slp = lightingProvider.getLayerListener(LightLayer.SKY);

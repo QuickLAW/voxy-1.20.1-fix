@@ -21,7 +21,8 @@ public class SectionSavingService {
     }
 
     private void processJob() {
-        var task = this.saveQueue.pop();
+        var task = this.saveQueue.pollFirst();
+        if (task == null) return;
         var section = task.section;
         section.assertNotFree();
         try {

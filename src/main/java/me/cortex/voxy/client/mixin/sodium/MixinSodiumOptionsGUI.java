@@ -15,9 +15,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
-@Mixin(SodiumOptionsGUI.class)
+@Mixin(value = SodiumOptionsGUI.class, remap = false)
 public class MixinSodiumOptionsGUI {
-    @Shadow(remap = false) @Final private List<OptionPage> pages;
+    @Shadow @Final private List<OptionPage> pages;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void voxy$addConfigPage(Screen prevScreen, CallbackInfo ci) {

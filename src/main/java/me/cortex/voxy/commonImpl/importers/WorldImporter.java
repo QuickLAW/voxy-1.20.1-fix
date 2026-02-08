@@ -72,7 +72,10 @@ public class WorldImporter implements IDataImporter {
 
     public WorldImporter(WorldEngine worldEngine, Level mcWorld, ServiceManager sm, BooleanSupplier runChecker) {
         this.world = worldEngine;
-        this.service = sm.createService(()->new Pair<>(()->this.jobQueue.poll().run(), ()->{}), 3, "World importer", runChecker);
+        this.service = sm.createService(()->new Pair<>(()->{
+            var job = this.jobQueue.poll();
+            if (job != null) job.run();
+        }, ()->{}), 3, "World importer", runChecker);
 
         var biomeRegistry = mcWorld.registryAccess().registryOrThrow(Registries.BIOME);
         var defaultBiome = biomeRegistry.getHolder(Biomes.PLAINS).orElseThrow();

@@ -32,8 +32,10 @@ import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.thread.ServiceManager;
 import me.cortex.voxy.common.world.WorldEngine;
 import me.cortex.voxy.commonImpl.VoxyCommon;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
+import me.cortex.voxy.common.world.service.VoxelIngestService;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.lwjgl.opengl.GL11;
@@ -209,10 +211,30 @@ public class VoxyRenderSystem {
         return viewport;
     }
 
+    private int fallbackIngestCounter = 0;
+    private void fallbackIngestLoadedChunks() {
+        if (VoxyConfig.CONFIG.ingestEnabled && this.fallbackIngestCounter++ % 1200 == 0) {
+            var client = Minecraft.getInstance();
+            if (client.level != null) {
+                var source = client.level.getChunkSource();
+                for (int x = -16; x <= 16; x++) {
+                    for (int z = -16; z <= 16; z++) {
+                        var chunk = source.getChunk((int) (client.player.getX() / 16) + x, (int) (client.player.getZ() / 16) + z, ChunkStatus.FULL, false);
+                        if (chunk != null) {
+                            VoxelIngestService.tryAutoIngestChunk(chunk);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void renderOpaque(Viewport<?> viewport) {
         if (viewport == null) {
             return;
         }
+
+        this.fallbackIngestLoadedChunks();
 
         TimingStatistics.resetSamplers();
 

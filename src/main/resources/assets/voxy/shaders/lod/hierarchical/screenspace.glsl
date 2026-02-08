@@ -153,7 +153,10 @@ bool isCulledByHiz() {
     }
     //pointSample = mix(pointSample, pointSample2, pointSample<=0.000001f);
 
-    return pointSample<=minBB.z;
+    // Use a small epsilon to prevent culling at the far plane (sky)
+    // pointSample is the maximum depth in the vanilla depth buffer for this node's area
+    // If it's very close to 1.0, it means it's sky and shouldn't cull anything
+    return pointSample < 0.999999f && pointSample <= minBB.z;
 }
 
 

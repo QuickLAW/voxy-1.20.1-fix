@@ -1,6 +1,7 @@
 {
   "required": true,
   "package": "me.cortex.voxy.client.mixin",
+  "plugin": "me.cortex.voxy.commonImpl.mixin.VoxyMixinConfigPlugin",
   "compatibilityLevel": "JAVA_17",
   "client": [
     "flashback.MixinFlashbackMeta",

@@ -147,6 +147,12 @@ dependencies {
     modCompileOnly("maven.modrinth:DistantHorizons:2.3.6-b-1.20.1")
     modRuntimeOnlyMsk("maven.modrinth:DistantHorizons:2.3.6-b-1.20.1")
     modRuntimeOnlyMsk("maven.modrinth:indium:1.0.36+mc1.20.1")
+
+    // Required for DHImporter
+    implementation "org.xerial:sqlite-jdbc:3.45.1.0"
+    include "org.xerial:sqlite-jdbc:3.45.1.0"
+    implementation "org.tukaani:xz:1.9"
+    include "org.tukaani:xz:1.9"
 }
 
 
