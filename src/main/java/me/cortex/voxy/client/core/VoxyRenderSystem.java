@@ -72,6 +72,11 @@ public class VoxyRenderSystem {
 
     private final AbstractRenderPipeline pipeline;
 
+    private Viewport<?> lastViewport;
+    private int lastSourceFrameBuffer;
+    private int lastSrcWidth;
+    private int lastSrcHeight;
+
     private static AbstractSectionRenderer.Factory<?,? extends IGeometryData> getRenderBackendFactory() {
         //TODO: need todo a thing where selects optimal section render based on if supports the pipeline and geometry data type
         return MDICSectionRenderer.FACTORY;
@@ -242,6 +247,11 @@ public class VoxyRenderSystem {
             throw new IllegalStateException("Cannot use the default framebuffer as cannot source from it");
         }
 
+        this.lastViewport = viewport;
+        this.lastSourceFrameBuffer = boundFB;
+        this.lastSrcWidth = dims[2];
+        this.lastSrcHeight = dims[3];
+
         //this.autoBalanceSubDivSize();
 
         this.pipeline.preSetup(viewport);
@@ -334,6 +344,17 @@ public class VoxyRenderSystem {
         this.postProcessing.renderPost(viewport, matrices.projection(), boundFB);
         TimingStatistics.F.stop();
          */
+    }
+
+    public void renderPostProcessFog() {
+        if (this.lastViewport == null || this.lastSourceFrameBuffer == 0) {
+            return;
+        }
+
+        int oldFB = GL11.glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING);
+        glBindFramebuffer(GL_FRAMEBUFFER, this.lastSourceFrameBuffer);
+        this.pipeline.renderFog(this.lastViewport, this.lastSourceFrameBuffer, this.lastSrcWidth, this.lastSrcHeight);
+        glBindFramebuffer(GL_FRAMEBUFFER, oldFB);
     }
 
 

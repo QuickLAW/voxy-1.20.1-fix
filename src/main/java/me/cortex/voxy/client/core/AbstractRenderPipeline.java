@@ -81,6 +81,9 @@ public abstract class AbstractRenderPipeline extends TrackedObject {
         glBindFramebuffer(GL_FRAMEBUFFER, sourceFrameBuffer);
     }
 
+    public void renderFog(Viewport<?> viewport, int sourceFrameBuffer, int srcWidth, int srcHeight) {
+    }
+
     public void runPipeline(Viewport<?> viewport, int sourceFrameBuffer, int srcWidth, int srcHeight) {
         int depthTexture = this.setup(viewport, sourceFrameBuffer, srcWidth, srcHeight);
 

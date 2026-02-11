@@ -9,8 +9,13 @@ import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.world.WorldEngine;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import me.cortex.voxy.commonImpl.WorldIdentifier;
+import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import com.mojang.blaze3d.vertex.PoseStack;
+import org.joml.Matrix4f;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,6 +32,22 @@ public abstract class MixinLevelRenderer implements IGetVoxyRenderSystem {
     @Override
     public VoxyRenderSystem getVoxyRenderSystem() {
         return this.renderer;
+    }
+
+    @Inject(method = "renderLevel", at = @At("TAIL"))
+    private void voxy$renderDeferredFog(
+            PoseStack matrices,
+            float tickDelta,
+            long limitTime,
+            boolean renderBlockOutline,
+            Camera camera,
+            GameRenderer gameRenderer,
+            LightTexture lightTexture,
+            Matrix4f projectionMatrix,
+            CallbackInfo ci) {
+        if (this.renderer != null) {
+            this.renderer.renderPostProcessFog();
+        }
     }
 
     @Inject(method = "allChanged()V", at = @At("RETURN"), order = 900)//We want to inject before sodium

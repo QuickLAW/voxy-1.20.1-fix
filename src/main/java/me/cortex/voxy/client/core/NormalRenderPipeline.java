@@ -153,16 +153,23 @@ public class NormalRenderPipeline extends AbstractRenderPipeline {
         AbstractRenderPipeline.transformBlitDepth(this.finalBlit, this.fb.getDepthTex().id, sourceFrameBuffer, viewport, new Matrix4f(viewport.vanillaProjection).mul(viewport.modelView));
         glDisable(GL_BLEND);
 
-        // 2. Apply Unified Fog to the entire scene
+    }
+
+    @Override
+    public void renderFog(Viewport<?> viewport, int sourceFrameBuffer, int srcWidth, int srcHeight) {
+        if (this.lastAtmosphericFog != VoxyConfig.CONFIG.atmosphericFog ||
+            this.lastEnvironmentalFog != VoxyConfig.CONFIG.environmentalFog ||
+            this.lastRenderVanillaFog != VoxyConfig.CONFIG.renderVanillaFog) {
+            this.rebuildFinalBlit();
+        }
+
         if (this.lastAtmosphericFog || (this.lastEnvironmentalFog && this.lastRenderVanillaFog)) {
             this.unifiedFogBlit.bind();
-            
-            // Get the depth texture from the source framebuffer (vanilla + LODs)
+
             int depthTexture = glGetNamedFramebufferAttachmentParameteri(sourceFrameBuffer, GL_DEPTH_ATTACHMENT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
             glBindTextureUnit(0, depthTexture);
 
             try (var stack = MemoryStack.stackPush()) {
-                // invProjMat
                 long ptr = stack.nmalloc(4*4*4);
                 new Matrix4f(viewport.vanillaProjection).invert().getToAddress(ptr);
                 nglUniformMatrix4fv(1, 1, false, ptr);
@@ -212,14 +219,13 @@ public class NormalRenderPipeline extends AbstractRenderPipeline {
                 }
             }
 
-            // Blend the fog over the existing scene
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glDepthMask(false);
             glDisable(GL_DEPTH_TEST);
-            
+
             this.unifiedFogBlit.blit();
-            
+
             glDepthMask(true);
             glDisable(GL_BLEND);
         }
