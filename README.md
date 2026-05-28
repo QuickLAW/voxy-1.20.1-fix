@@ -20,6 +20,8 @@
 
 <!-- DREAMFIELD_README_HEADER_END -->
 
+# 未来计划
+**考虑归档此项目，转为直接fork官方最新版voxy，直接用最新版进行版本适配和bug修复**
 
 # Copyright 2025 MCRcortex
 
